@@ -1,7 +1,7 @@
-var app = require('express')();											// use express for routing
-var Pool = require('pg').Pool;											// use pg for postgres requests
+const app = require('express')();											// use express for routing
+const Pool = require('pg').Pool;											// use pg for postgres requests
 
-var config = {
+const config = {
 	user : 'postgres',
 	database : 'postgres',
 	host : 'localhost',
@@ -9,16 +9,16 @@ var config = {
 	password : process.env.DB_PASSWORD
 }
 
-var pool = new Pool(config);
-var temp = [];
-var qs = [];
-var facilityNames = [];
-var facility = [ ];
-var mean = { };
-var outp = { };
-var intermed = { };
-var averg=0;
-var bigcount = [];
+const pool = new Pool(config);
+const temp = [];
+const qs = [];
+const facilityNames = [];
+const facility = [ ];
+const mean = { };
+const outp = { };
+const intermed = { };
+const averg=0;
+const bigcount = [];
 
 /*
 	HCAHPS Composite Measures
@@ -50,7 +50,7 @@ var bigcount = [];
 11. Recommend the Hospital (Q22)
 */
 
-var measures = {																								// use same names for components and data
+const measures = {																								// use same names for components and data
 	comm_nurse : ['q1','q2','q3'],
   comm_doc : ['q5','q6','q7'],
   comm_staff : ['q4','q11'],
@@ -64,7 +64,7 @@ var measures = {																								// use same names for components and dat
   recc : ['q22']
 };
 
-var Star = {											// store upper limits of each rating
+const Star = {											// store upper limits of each rating
 	"Communication with Nurses" : [
 		{value : "0"},
 		{value : "85"},
@@ -110,44 +110,44 @@ var Star = {											// store upper limits of each rating
 	]
 };
 
-var keys = Object.keys(measures);										// store keys of object in variable
+const keys = Object.keys(measures);										// store keys of object in constiable
 
 app.get('/', function (req,res){
 	pool.query('SELECT * FROM random', function(err,result){			// select all data from table
 		if(err){
 			res.status(500).send(err.toString());
 		} else {
-			results = result.rows;														// store results in a variable
+			results = result.rows;														// store results in a constiable
 
 			function onlyUnique(value, index, self) {
 			    return self.indexOf(value) === index;
 			}
 
-			for (var i=0;i<results.length;i++){														// store all facility ids in temp( with repetition)
+			for (const i=0;i<results.length;i++){														// store all facility ids in temp( with repetition)
 				temp.push(Number(results[i].facility_id));
 			}
 
 			facilityNames = temp.filter( onlyUnique );									// get only unique elements in facilityNames using function
 
-			for(var i=0;i<facilityNames.length;i++){												// intializing arrays
+			for(const i=0;i<facilityNames.length;i++){												// intializing arrays
 				facility[facilityNames[i]]=[ ];
 				mean[facilityNames[i]]=[ ];
 				intermed[facilityNames[i]]=[ ];
 				outp[facilityNames[i]]=[ ];
 			}
 
-			for(var i=0;i<results.length;i++){														// check whether form is of survey and push into facility[facility_name] array
-				for(var j=0;j<results[i].assignedpackets.assignedPackets[0].templates.length;j++){
+			for(const i=0;i<results.length;i++){														// check whether form is of survey and push into facility[facility_name] array
+				for(const j=0;j<results[i].assignedpackets.assignedPackets[0].templates.length;j++){
 					if(results[i].assignedpackets.assignedPackets[0].templates[j].formTemplate.formName == "HCAHPS Survey")
 						facility[Number(results[i].facility_id)].push(results[i].assignedpackets.assignedPackets[0].templates[j]);
 				}
 			}
 
 			avg();														// call avg to calculate output
-			var outObj = [];
+			const outObj = [];
 
-			for(var i=0;i<facilityNames.length;i++){					// Write Output as required
-				var outObjTemplate = {										//template of output object
+			for(const i=0;i<facilityNames.length;i++){					// Write Output as required
+				const outObjTemplate = {										//template of output object
 					FacilityID : '',
 					NoofRespondent : '',
 					"Composite Measures" : {
@@ -203,7 +203,7 @@ app.get('/', function (req,res){
 });
 
 function getRating(reqKey,num){
-	var i=0;
+	const i=0;
 	if(num == 100)
 		return 5;
 	while(num > Star[reqKey][i].value && Star[reqKey][i] != undefined){
@@ -215,12 +215,12 @@ function getRating(reqKey,num){
 
 function avg(){																							// function to calculate rating
 
-	for(var i=0;i<facilityNames.length;i++){											// loop to traverse names of facilities
-		for(var k=0;k<keys.length;k++){													// loop to traverse keys
-			for(var l=0;l<keys[k].length;l++){											// loop to traverse measures object usin keys
+	for(const i=0;i<facilityNames.length;i++){											// loop to traverse names of facilities
+		for(const k=0;k<keys.length;k++){													// loop to traverse keys
+			for(const l=0;l<keys[k].length;l++){											// loop to traverse measures object usin keys
 				if(measures[keys[k]][l] != undefined){
 					averg=0;
-					var j=0;
+					const j=0;
 					while(facility[facilityNames[i]][j] != undefined ){					// if facility defined , add to averg
 						averg += Number(facility[facilityNames[i]][j].data[measures[keys[k]][l]]);
 						j++;											// j used to count
@@ -228,24 +228,24 @@ function avg(){																							// function to calculate rating
 					averg /= j;												// divide by j to get averg
 					mean[facilityNames[i]].push(averg);						// push to mean object array according to facilityname
 
-					var tempjson = facility[facilityNames[0]][1].formTemplate.components;		// store address in tempjson
+					const tempjson = facility[facilityNames[0]][1].formTemplate.components;		// store address in tempjson
 
 
 					// convert top of mean to 100 value using given formula
-					for(var m=0;m<tempjson.length;m++){
+					for(const m=0;m<tempjson.length;m++){
 						if(measures[keys[k]][l] == tempjson[m].key){
-							var calc = 100 * (mean[facilityNames[i]][mean[facilityNames[i]].length - 1] - tempjson[m].values[0].value ) / (tempjson[m].values[tempjson[m].values.length - 1].value - tempjson[m].values[0].value);
+							const calc = 100 * (mean[facilityNames[i]][mean[facilityNames[i]].length - 1] - tempjson[m].values[0].value ) / (tempjson[m].values[tempjson[m].values.length - 1].value - tempjson[m].values[0].value);
 							intermed[facilityNames[i]].push(calc);
 						}
 					}
 				}
 			}
-			var calc=0;
-			var count=0;
+			const calc=0;
+			const count=0;
 
 			// calculate individual measures using 100 output and push using facilityNames, answers saved in order of questions
 
-			for(var n=0;n<keys[k].length;n++){
+			for(const n=0;n<keys[k].length;n++){
 				if(measures[keys[k]][n] != undefined){
 					calc += (intermed[facilityNames[i]][count]);
 					count++;
@@ -268,7 +268,7 @@ pool.connect( function (err) {										// connect to check if db working
 	else console.log('connected');
 });
 
-var port = process.env.PORT || 8080																		// listen on env or local port
+const port = process.env.PORT || 8080																		// listen on env or local port
 app.listen(port, function(){
 	console.log('listening on '+port);
 });
